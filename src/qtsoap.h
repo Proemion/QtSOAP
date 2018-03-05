@@ -46,111 +46,28 @@
 #include <QtCore/QUrl>
 #include <QtCore/QHash>
 #include <QtCore/QLinkedList>
-#include <QtCore/QPointer>
+
+#include <memory>
 
 #if defined(Q_OS_WIN) || defined(Q_OS_SYMBIAN)
-  #if defined(QtSOAP_EXPORTS)
-    #define QT_QTSOAP_EXPORT Q_DECL_EXPORT
-  #else
-    #define QT_QTSOAP_EXPORT Q_DECL_IMPORT
-  #endif
+#if defined(QtSOAP_EXPORTS)
+#define QT_QTSOAP_EXPORT Q_DECL_EXPORT
+#else
+#define QT_QTSOAP_EXPORT Q_DECL_IMPORT
+#endif
 #endif
 
 #if !defined(QT_QTSOAP_EXPORT)
-  #define QT_QTSOAP_EXPORT Q_DECL_EXPORT
+#define QT_QTSOAP_EXPORT Q_DECL_EXPORT
 #endif
 
+#define SOAPv11_ENVELOPE "http://schemas.xmlsoap.org/soap/envelope/"
+#define SOAPv11_ENCODING "http://schemas.xmlsoap.org/soap/encoding/"
+#define SOAPv11_ACTORNEXT "http://schemas.xmlsoap.org/soap/actor/next"
 
-#define SOAPv11_ENVELOPE    "http://schemas.xmlsoap.org/soap/envelope/"
-#define SOAPv11_ENCODING    "http://schemas.xmlsoap.org/soap/encoding/"
-#define SOAPv11_ACTORNEXT   "http://schemas.xmlsoap.org/soap/actor/next"
-
-#define XML_SCHEMA          "http://www.w3.org/1999/XMLSchema"
+#define XML_SCHEMA "http://www.w3.org/1999/XMLSchema"
 #define XML_SCHEMA_INSTANCE "http://www.w3.org/1999/XMLSchema-instance"
-#define XML_NAMESPACE       "http://www.w3.org/XML/1998/namespace"
-
-template <class T>
-class QtSmartPtr
-{
-public:
-    inline QtSmartPtr(T *data = 0)
-    {
-	d = data;
-	r = new int;
-	*r = 1;
-    }
-
-    inline QtSmartPtr(const QtSmartPtr &copy)
-    {
-	if (*copy.r != 0)
-	    ++(*copy.r);
-
-	r = copy.r;
-	d = copy.d;
-    }
-
-    inline ~QtSmartPtr()
-    {
-        if ((*r) == 0)
-            delete r;
-	else if ((*r) != 0 && --(*r) == 0) {
-	    delete r;
-	    if (d) delete d;
-	}
-    }
-
-    inline QtSmartPtr &operator =(const QtSmartPtr &copy)
-    {
-	if (*copy.r != 0)
-	    ++(*copy.r);
-
-        if ((*r) == 0)
-            delete r;
-	else if ((*r) != 0 && --(*r) == 0) {
-	    delete r;
-	    if (d) delete d;
-	}
-
-	r = copy.r;
-	d = copy.d;
-	return *this;
-    }
-
-    inline T &operator *() const
-    {
-	return *d;
-    }
-
-    inline T *operator ->() const
-    {
-	    return d;
-    }
-
-    inline T *ptr() const
-    {
-	return d;
-    }
-
-    inline T &ref() const
-    {
-	return *d;
-    }
-
-    inline T *releasedPtr() const
-    {
-	(*r) = 0;
-	return d;
-    }
-
-    inline bool isNull() const
-    {
-	return d == 0;
-    }
-
-private:
-    int *r;
-    T *d;
-};
+#define XML_NAMESPACE "http://www.w3.org/XML/1998/namespace"
 
 class QT_QTSOAP_EXPORT QtSoapQName
 {
@@ -158,7 +75,7 @@ public:
     QtSoapQName(const QString &name = QString::QString(), const QString &uri = QString::QString());
     ~QtSoapQName();
 
-    QtSoapQName &operator =(const QString &s);
+    QtSoapQName &operator=(const QString &s);
 
     QString name() const;
     QString uri() const;
@@ -168,27 +85,64 @@ private:
     QString nuri;
 };
 
-bool operator ==(const QtSoapQName &n1, const QtSoapQName &n2);
-bool operator <(const QtSoapQName &n1, const QtSoapQName &n2);
+bool operator==(const QtSoapQName &n1, const QtSoapQName &n2);
+bool operator<(const QtSoapQName &n1, const QtSoapQName &n2);
 
 class QT_QTSOAP_EXPORT QtSoapType
 {
 public:
-    enum Type {
-	Duration, DateTime, Time, Date, GYearMonth, GYear, GMonthDay,
-	GDay, GMonth, Boolean, Base64Binary, HexBinary, Float, Double,
-	AnyURI, QName, NOTATION, String, NormalizedString, Token, Language,
-	Name, NMTOKEN, NCName, ID, IDREF, ENTITY, Decimal, Integer,
-	NonPositiveInteger, NegativeInteger, Long, Int, Short,
-	Byte, NonNegativeInteger, UnsignedLong, PositiveInteger,
-	UnsignedInt, UnsignedShort, UnsignedByte,
-	Array, Struct, Other
+    enum Type
+    {
+        Duration,
+        DateTime,
+        Time,
+        Date,
+        GYearMonth,
+        GYear,
+        GMonthDay,
+        GDay,
+        GMonth,
+        Boolean,
+        Base64Binary,
+        HexBinary,
+        Float,
+        Double,
+        AnyURI,
+        QName,
+        NOTATION,
+        String,
+        NormalizedString,
+        Token,
+        Language,
+        Name,
+        NMTOKEN,
+        NCName,
+        ID,
+        IDREF,
+        ENTITY,
+        Decimal,
+        Integer,
+        NonPositiveInteger,
+        NegativeInteger,
+        Long,
+        Int,
+        Short,
+        Byte,
+        NonNegativeInteger,
+        UnsignedLong,
+        PositiveInteger,
+        UnsignedInt,
+        UnsignedShort,
+        UnsignedByte,
+        Array,
+        Struct,
+        Other
     };
 
     QtSoapType();
     QtSoapType(const QtSoapQName &name, Type t = Other);
     QtSoapType(const QtSoapType &copy);
-    QtSoapType &operator =(const QtSoapType &copy);
+    QtSoapType &operator=(const QtSoapType &copy);
     virtual ~QtSoapType();
 
     virtual void clear();
@@ -199,13 +153,13 @@ public:
     virtual int count() const;
     virtual QVariant value() const;
 
-    virtual QtSoapType &operator [](int);
-    virtual QtSoapType &operator [](const QtSoapQName &s);
-    virtual QtSoapType &operator [](const QString &name);
+    virtual QtSoapType &operator[](int);
+    virtual QtSoapType &operator[](const QtSoapQName &s);
+    virtual QtSoapType &operator[](const QString &name);
 
-    virtual const QtSoapType &operator [](int) const;
-    virtual const QtSoapType &operator [](const QtSoapQName &s) const;
-    virtual const QtSoapType &operator [](const QString &name) const;
+    virtual const QtSoapType &operator[](int) const;
+    virtual const QtSoapType &operator[](const QtSoapQName &s) const;
+    virtual const QtSoapType &operator[](const QString &name) const;
 
     virtual QDomElement toDomElement(QDomDocument) const;
 
@@ -243,10 +197,10 @@ class QT_QTSOAP_EXPORT QtSoapArray : public QtSoapType
 {
 public:
     QtSoapArray();
-    QtSoapArray(const QtSoapQName &name, QtSoapType::Type type = Other,
-		int size0 = -1, int size1 = -1, int size2 = -1, int size3 = -1, int size4 = -1);
+    QtSoapArray(const QtSoapQName &name, QtSoapType::Type type = Other, int size0 = -1,
+                int size1 = -1, int size2 = -1, int size3 = -1, int size4 = -1);
     QtSoapArray(const QtSoapArray &copy);
-    QtSoapArray &operator = (const QtSoapArray &copy);
+    QtSoapArray &operator=(const QtSoapArray &copy);
     ~QtSoapArray();
 
     void clear();
@@ -261,25 +215,25 @@ public:
     QtSoapType &at(int pos0, int pos1, int pos2);
     QtSoapType &at(int pos0, int pos1, int pos2, int pos3);
     QtSoapType &at(int pos0, int pos1, int pos2, int pos3, int pos4);
-    QtSoapType &operator [](int i);
-    QtSoapType &operator [](const QString &);
-    QtSoapType &operator [](const QtSoapQName &);
+    QtSoapType &operator[](int i);
+    QtSoapType &operator[](const QString &);
+    QtSoapType &operator[](const QtSoapQName &);
 
     const QtSoapType &at(int pos) const;
     const QtSoapType &at(int pos0, int pos1) const;
     const QtSoapType &at(int pos0, int pos1, int pos2) const;
     const QtSoapType &at(int pos0, int pos1, int pos2, int pos3) const;
     const QtSoapType &at(int pos0, int pos1, int pos2, int pos3, int pos4) const;
-    const QtSoapType &operator [](int i) const;
-    const QtSoapType &operator [](const QString &) const;
-    const QtSoapType &operator [](const QtSoapQName &) const;
+    const QtSoapType &operator[](int i) const;
+    const QtSoapType &operator[](const QString &) const;
+    const QtSoapType &operator[](const QtSoapQName &) const;
 
-    void append(QtSoapType *item);
-    void insert(int pos0, QtSoapType *item);
-    void insert(int pos0,int pos1, QtSoapType *item);
-    void insert(int pos0,int pos1,int pos2, QtSoapType *item);
-    void insert(int pos0,int pos1,int pos2,int pos3, QtSoapType *item);
-    void insert(int pos0,int pos1,int pos2,int pos3,int pos4, QtSoapType *item);
+    void append(std::shared_ptr<QtSoapType> item);
+    void insert(int pos0, std::shared_ptr<QtSoapType> item);
+    void insert(int pos0, int pos1, std::shared_ptr<QtSoapType> item);
+    void insert(int pos0, int pos1, int pos2, std::shared_ptr<QtSoapType> item);
+    void insert(int pos0, int pos1, int pos2, int pos3, std::shared_ptr<QtSoapType> item);
+    void insert(int pos0, int pos1, int pos2, int pos3, int pos4, std::shared_ptr<QtSoapType> item);
 
     QDomElement toDomElement(QDomDocument doc) const;
 
@@ -289,7 +243,7 @@ protected:
     QString arraySizeString() const;
     QString arrayTypeString() const;
 
-    QHash<int, QtSmartPtr<QtSoapType> > array;
+    QHash<int, std::shared_ptr<QtSoapType>> array;
     int lastIndex;
 
 private:
@@ -303,23 +257,23 @@ class QT_QTSOAP_EXPORT QtSoapArrayIterator
 public:
     QtSoapArrayIterator(QtSoapArray &);
     QtSoapArrayIterator(const QtSoapArrayIterator &copy);
-    QtSoapArrayIterator &operator =(const QtSoapArrayIterator &j);
+    QtSoapArrayIterator &operator=(const QtSoapArrayIterator &j);
     ~QtSoapArrayIterator();
 
     int pos() const;
     void pos(int *pos0, int *pos1 = 0, int *pos2 = 0, int *pos3 = 0, int *pos4 = 0) const;
 
-    QtSoapType *data();
-    const QtSoapType *current() const;
+    std::shared_ptr<QtSoapType> data();
+    const std::shared_ptr<QtSoapType> current() const;
 
-    void operator ++();
-    bool operator !=(const QtSoapArrayIterator &j) const;
-    bool operator ==(const QtSoapArrayIterator &j) const;
+    void operator++();
+    bool operator!=(const QtSoapArrayIterator &j) const;
+    bool operator==(const QtSoapArrayIterator &j) const;
 
     bool atEnd() const;
 
 private:
-    QHash<int, QtSmartPtr<QtSoapType> >::Iterator it;
+    QHash<int, std::shared_ptr<QtSoapType>>::Iterator it;
     QtSoapArray *arr;
 };
 
@@ -331,7 +285,7 @@ public:
     QtSoapStruct();
     QtSoapStruct(const QtSoapQName &name);
     QtSoapStruct(const QtSoapStruct &copy);
-    QtSoapStruct &operator =(const QtSoapStruct &copy);
+    QtSoapStruct &operator=(const QtSoapStruct &copy);
     ~QtSoapStruct();
 
     void clear();
@@ -344,41 +298,41 @@ public:
     QtSoapType &at(const QtSoapQName &key);
     const QtSoapType &at(const QtSoapQName &key) const;
 
-    QtSoapType &operator [](int);
-    QtSoapType &operator [](const QtSoapQName &key);
-    QtSoapType &operator [](const QString &key);
+    QtSoapType &operator[](int);
+    QtSoapType &operator[](const QtSoapQName &key);
+    QtSoapType &operator[](const QString &key);
 
-    const QtSoapType &operator [](int) const;
-    const QtSoapType &operator [](const QtSoapQName &key) const;
-    const QtSoapType &operator [](const QString &key) const;
+    const QtSoapType &operator[](int) const;
+    const QtSoapType &operator[](const QtSoapQName &key) const;
+    const QtSoapType &operator[](const QString &key) const;
 
-    void insert(QtSoapType *item);
+    void insert(std::shared_ptr<QtSoapType> item);
 
     QDomElement toDomElement(QDomDocument doc) const;
 
     friend class QtSoapStructIterator;
 
 protected:
-    QList<QtSmartPtr<QtSoapType> > dict;
+    QList<std::shared_ptr<QtSoapType>> dict;
 };
 
 class QT_QTSOAP_EXPORT QtSoapStructIterator
 {
 public:
-    QtSoapStructIterator(QtSoapStruct &);
+    QtSoapStructIterator(QtSoapStruct const &);
     ~QtSoapStructIterator();
 
     QtSoapQName key() const;
-    QtSoapType *data();
-    const QtSoapType *current() const;
+    std::shared_ptr<QtSoapType> data();
+    const std::shared_ptr<QtSoapType> current() const;
 
-    void operator ++();
-    bool operator !=(const QtSoapStructIterator &j) const;
-    bool operator ==(const QtSoapStructIterator &j) const;
+    void operator++();
+    bool operator!=(const QtSoapStructIterator &j) const;
+    bool operator==(const QtSoapStructIterator &j) const;
 
 private:
-    QList<QtSmartPtr<QtSoapType> >::Iterator it;
-    QList<QtSmartPtr<QtSoapType> >::Iterator itEnd;
+    QList<std::shared_ptr<QtSoapType>>::const_iterator it;
+    QList<std::shared_ptr<QtSoapType>>::const_iterator itEnd;
 };
 
 class QT_QTSOAP_EXPORT QtSoapSimpleType : public QtSoapType
@@ -390,7 +344,7 @@ public:
     QtSoapSimpleType(const QtSoapQName &name, bool n, int dummy);
     QtSoapSimpleType(const QtSoapQName &name, const QString &n);
     QtSoapSimpleType(const QtSoapSimpleType &copy);
-    QtSoapSimpleType &operator =(const QtSoapSimpleType &copy);
+    QtSoapSimpleType &operator=(const QtSoapSimpleType &copy);
     ~QtSoapSimpleType();
 
     void clear();
@@ -418,31 +372,32 @@ public:
     QtSoapMessage(const QtSoapMessage &copy);
     ~QtSoapMessage();
 
-    QtSoapMessage &operator =(const QtSoapMessage &copy);
+    QtSoapMessage &operator=(const QtSoapMessage &copy);
 
     bool setContent(const QByteArray &buffer);
     bool setContent(QDomDocument &d);
 
-    void addBodyItem(QtSoapType *);
-    void addHeaderItem(QtSoapType *);
+    void addBodyItem(std::shared_ptr<QtSoapType>);
+    void addHeaderItem(std::shared_ptr<QtSoapType>);
 
     // Method and response
     const QtSoapType &method() const;
     const QtSoapType &returnValue() const;
     void setMethod(const QtSoapQName &);
     void setMethod(const QString &name, const QString &url = QString::QString());
-    void addMethodArgument(QtSoapType *);
+    void addMethodArgument(std::shared_ptr<QtSoapType>);
     void addMethodArgument(const QString &uri, const QString &name, const QString &value);
     void addMethodArgument(const QString &uri, const QString &name, bool value, int dummy);
     void addMethodArgument(const QString &uri, const QString &name, int value);
 
     // Fault
-    enum FaultCode {
-	VersionMismatch,
-	MustUnderstand,
-	Client,
-	Server,
-	Other
+    enum FaultCode
+    {
+        VersionMismatch,
+        MustUnderstand,
+        Client,
+        Server,
+        Other
     };
 
     bool isFault() const;
@@ -451,10 +406,10 @@ public:
     const QtSoapType &faultDetail() const;
     void setFaultCode(FaultCode code);
     void setFaultString(const QString &fstring);
-    void addFaultDetail(QtSoapType *detail);
+    void addFaultDetail(std::shared_ptr<QtSoapType> detail);
 
-    //additional method for setting further namespaces
-    void useNamespace(const QString& prefix, const QString& namespaceURI);
+    // additional method for setting further namespaces
+    void useNamespace(const QString &prefix, const QString &namespaceURI);
 
     // Generating
     void clear();
@@ -464,11 +419,12 @@ public:
     QString errorString() const;
 
 protected:
-    enum MessageType {
-	Fault,
-	MethodRequest,
-	MethodResponse,
-	OtherType
+    enum MessageType
+    {
+        Fault,
+        MethodRequest,
+        MethodResponse,
+        OtherType
     };
 
     bool isValidSoapMessage(const QDomDocument &candidate);
@@ -495,15 +451,11 @@ private:
 class QT_QTSOAP_EXPORT QtSoapTypeConstructorBase
 {
 public:
-    inline QtSoapTypeConstructorBase()
-    {
-    }
+    inline QtSoapTypeConstructorBase() {}
 
-    virtual inline ~QtSoapTypeConstructorBase()
-    {
-    }
+    virtual inline ~QtSoapTypeConstructorBase() {}
 
-    virtual QtSoapType *createObject(QDomNode) = 0;
+    virtual std::shared_ptr<QtSoapType> createObject(QDomNode) = 0;
 
     virtual QString errorString() const = 0;
 };
@@ -512,26 +464,20 @@ template <class T>
 class QT_QTSOAP_EXPORT QtSoapTypeConstructor : public QtSoapTypeConstructorBase
 {
 public:
-    QtSoapTypeConstructor()
+    QtSoapTypeConstructor() {}
+
+    std::shared_ptr<QtSoapType> createObject(QDomNode node) Q_DECL_OVERRIDE
     {
+        auto t = std::make_shared<T>();
+        if (t->parse(node)) {
+            return t;
+        } else {
+            errorStr = t->errorString();
+            return nullptr;
+        }
     }
 
-    QtSoapType *createObject(QDomNode node)
-    {
-	T *t = new T();
-	if (t->parse(node)) {
-	    return t;
-	} else {
-	    errorStr = t->errorString();
-	    delete t;
-	    return 0;
-	}
-    }
-
-    QString errorString() const
-    {
-	return errorStr;
-    }
+    QString errorString() const { return errorStr; }
 
 private:
     mutable QString errorStr;
@@ -549,14 +495,14 @@ public:
 
     bool registerHandler(const QString &name, QtSoapTypeConstructorBase *handler);
 
-    QtSmartPtr<QtSoapType> soapType(QDomNode node) const;
+    std::shared_ptr<QtSoapType> soapType(QDomNode node) const;
 
     QString errorString() const;
 
 private:
     mutable QString errorStr;
     QHash<QString, QtSoapTypeConstructorBase *> typeHandlers;
-    QLinkedList<QtSoapTypeConstructorBase*> deleteList;
+    QLinkedList<QtSoapTypeConstructorBase *> deleteList;
 };
 
 class QT_QTSOAP_EXPORT QtSoapNamespaces
@@ -581,7 +527,7 @@ public:
     ~QtSoapHttpTransport();
 
     void setHost(const QString &host, bool useSecureHTTP = false, int port = 0);
-    void setHost(const QString &host, int port); //obsolete
+    void setHost(const QString &host, int port); // obsolete
     void setAction(const QString &action);
     void submitRequest(QNetworkRequest &networkReq, QtSoapMessage &request, const QString &path);
     void submitRequest(QtSoapMessage &request, const QString &path);
