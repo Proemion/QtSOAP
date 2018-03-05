@@ -477,7 +477,7 @@ public:
         }
     }
 
-    QString errorString() const { return errorStr; }
+    QString errorString() const Q_DECL_OVERRIDE { return errorStr; }
 
 private:
     mutable QString errorStr;
