@@ -122,15 +122,6 @@ QString localName(const QString &tagName)
 
     return tagName;
 }
-
-QString prefix(const QString &tagName)
-{
-    int pos;
-    if ((pos = tagName.indexOf(':')))
-        return tagName.left(pos);
-
-    return tagName;
-}
 }
 
 /*! \class QtSoapQName qtsoap.h
