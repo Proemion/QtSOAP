@@ -325,6 +325,7 @@ public:
     QtSoapQName key() const;
     std::shared_ptr<QtSoapType> data();
     const std::shared_ptr<QtSoapType> current() const;
+    bool hasNext() const;
 
     void operator++();
     bool operator!=(const QtSoapStructIterator &j) const;

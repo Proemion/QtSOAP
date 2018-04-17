@@ -1987,6 +1987,11 @@ const std::shared_ptr<QtSoapType> QtSoapStructIterator::current() const
     return *it;
 }
 
+bool QtSoapStructIterator::hasNext() const
+{
+    return it != itEnd;
+}
+
 /*!
     Moves the iterator to the next item in the struct.
 */
