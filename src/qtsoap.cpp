@@ -84,8 +84,6 @@
             \i Lets you iterate over all the values in a SOAP array
     \row    \i \l QtSoapStruct
             \i Represents a SOAP struct
-    \row    \i \l QtSoapStructIterator
-            \i Lets you iterate over all the values in a SOAP array
     \row    \i \l QtSoapSimpleType
             \i Represents simple SOAP types such as String, Integer and Boolean.
     \row    \i \l QtSoapHttpTransport
@@ -281,8 +279,7 @@ bool operator<(const QtSoapQName &s1, const QtSoapQName &s2)
     \endcode
 
     Use the operator[]() or at() when looking up entries in a struct
-    by name. If the names are unknown, QtSoapStructIterator lets you
-    iterate through all the items.
+    by name. Alternatively you can use iterators to iterate through items.
 
     \code
     QtSoapType &helloItem = myStruct["Hello"];
@@ -290,30 +287,7 @@ bool operator<(const QtSoapQName &s1, const QtSoapQName &s2)
 
     toDomElement() converts the QtSoapStruct to a DomElement.
 
-    \sa QtSoapStructIterator, QtSoapType, QtSoapArray, QtSoapSimpleType
-*/
-
-/*! \class QtSoapStructIterator
-    \brief The QtSoapStructIterator class provides an iterator for
-    traversing the items in a QtSoapStruct.
-
-    The iterator is created by passing a QtSoapStruct to the
-    constructor. It it not defined which item the iterator initially
-    will point to. Neither is the order in which the items are
-    processed.
-
-    key() returns the name of the current item. data() and current()
-    return a pointer to the current item, or 0 if there is none.
-    operator++() navigates to the next item in the struct.
-
-    \code
-    for (QtSoapStructIterator it(myStruct); it.current(); ++it) {
-        QtSoapType *item = it.data();
-        // process item
-    }
-    \endcode
-
-    \sa QtSoapArrayIterator
+    \sa QtSoapType, QtSoapArray, QtSoapSimpleType
 */
 
 /*! \class QtSoapArray qtsoap.h
@@ -1762,10 +1736,30 @@ QDomElement QtSoapStruct::toDomElement(QDomDocument doc) const
     QDomElement a = n.uri() == "" ? doc.createElement(n.name())
                                   : doc.createElementNS(n.uri(), prefix + ":" + n.name());
 
-    for (QtSoapStructIterator i(*const_cast<QtSoapStruct *>(this)); i.data(); ++i)
-        a.appendChild(i.data()->toDomElement(doc));
+    for (auto &child : (*const_cast<QtSoapStruct *>(this)))
+        a.appendChild(child->toDomElement(doc));
 
     return a;
+}
+
+QtSoapStruct::const_iterator QtSoapStruct::begin() const
+{
+    return dict.constBegin();
+}
+
+QtSoapStruct::const_iterator QtSoapStruct::end() const
+{
+    return dict.constEnd();
+}
+
+QtSoapStruct::iterator QtSoapStruct::begin()
+{
+    return dict.begin();
+}
+
+QtSoapStruct::iterator QtSoapStruct::end()
+{
+    return dict.end();
 }
 
 /*! \reimp
@@ -1936,83 +1930,12 @@ const QtSoapType &QtSoapStruct::at(const QtSoapQName &key) const
 {
     static QtSoapType NIL;
 
-    for (QtSoapStructIterator i(*const_cast<QtSoapStruct *>(this)); i.current(); ++i)
-        if (i.key() == key)
-            return *i.current();
+    for (auto child : (*const_cast<QtSoapStruct *>(this))) {
+        if (child->name() == key)
+            return *child;
+    }
 
     return NIL;
-}
-
-/*!
-    Constructs a QtSoapStructIterator and initializes it to point to
-    the first element in the struct \a s.
-*/
-QtSoapStructIterator::QtSoapStructIterator(const QtSoapStruct &s) :
-    it(s.dict.begin()), itEnd(s.dict.end())
-{
-}
-
-/*!
-    Destructs the QtSoapStructIterator.
-*/
-QtSoapStructIterator::~QtSoapStructIterator() {}
-
-/*!
-    Returns the QName (qualified name) of the current item.
-*/
-QtSoapQName QtSoapStructIterator::key() const
-{
-    if (it == itEnd)
-        return QtSoapQName();
-    return (*it)->name();
-}
-
-/*!
-    Returns a pointer to the current item, or 0 if there is none.
-*/
-std::shared_ptr<QtSoapType> QtSoapStructIterator::data()
-{
-    if (it == itEnd)
-        return nullptr;
-    return *it;
-}
-
-/*!
-    Returns a pointer to the current item, or 0 if there is none.
-*/
-const std::shared_ptr<QtSoapType> QtSoapStructIterator::current() const
-{
-    if (it == itEnd)
-        return nullptr;
-    return *it;
-}
-
-/*!
-    Moves the iterator to the next item in the struct.
-*/
-void QtSoapStructIterator::operator++()
-{
-    if (it == itEnd)
-        return;
-    ++it;
-}
-
-/*!
-    Returns true if this iterator's position is not equal to that of
-    \a j; otherwise returns false.
-*/
-bool QtSoapStructIterator::operator!=(const QtSoapStructIterator &j) const
-{
-    return it != j.it;
-}
-
-/*!
-    Returns true if this iterator's position is equal to that of \a
-    j; otherwise returns false.
-*/
-bool QtSoapStructIterator::operator==(const QtSoapStructIterator &j) const
-{
-    return it == j.it;
 }
 
 /*!
@@ -2619,8 +2542,7 @@ const QtSoapType &QtSoapMessage::returnValue() const
     if (m.count() == 0)
         return NIL;
 
-    QtSoapStructIterator mi(m);
-    return *mi.data();
+    return **m.begin();
 }
 
 /*!
@@ -2799,9 +2721,7 @@ const QtSoapType &QtSoapMessage::method() const
     if (body().count() == 0)
         return NIL;
 
-    QtSoapStructIterator it(body());
-
-    return *it.data();
+    return **body().begin();
 }
 
 /*!
@@ -2845,8 +2765,7 @@ void QtSoapMessage::addMethodArgument(std::shared_ptr<QtSoapType> arg)
         return;
     }
 
-    QtSoapStructIterator it(body());
-    QtSoapType &node = *it.data();
+    QtSoapType &node = **body().begin();
     QtSoapStruct &meth = static_cast<QtSoapStruct &>(node);
     meth.insert(arg);
 }
