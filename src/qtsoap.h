@@ -277,11 +277,12 @@ private:
     QtSoapArray *arr;
 };
 
-class QtSoapStructIterator;
-
 class QT_QTSOAP_EXPORT QtSoapStruct : public QtSoapType
 {
 public:
+    using iterator = QList<std::shared_ptr<QtSoapType>>::iterator;
+    using const_iterator = QList<std::shared_ptr<QtSoapType>>::const_iterator;
+
     QtSoapStruct();
     QtSoapStruct(const QtSoapQName &name);
     QtSoapStruct(const QtSoapStruct &copy);
@@ -310,29 +311,13 @@ public:
 
     QDomElement toDomElement(QDomDocument doc) const;
 
-    friend class QtSoapStructIterator;
+    const_iterator begin() const;
+    const_iterator end() const;
+    iterator begin();
+    iterator end();
 
 protected:
     QList<std::shared_ptr<QtSoapType>> dict;
-};
-
-class QT_QTSOAP_EXPORT QtSoapStructIterator
-{
-public:
-    QtSoapStructIterator(QtSoapStruct const &);
-    ~QtSoapStructIterator();
-
-    QtSoapQName key() const;
-    std::shared_ptr<QtSoapType> data();
-    const std::shared_ptr<QtSoapType> current() const;
-
-    void operator++();
-    bool operator!=(const QtSoapStructIterator &j) const;
-    bool operator==(const QtSoapStructIterator &j) const;
-
-private:
-    QList<std::shared_ptr<QtSoapType>>::const_iterator it;
-    QList<std::shared_ptr<QtSoapType>>::const_iterator itEnd;
 };
 
 class QT_QTSOAP_EXPORT QtSoapSimpleType : public QtSoapType
