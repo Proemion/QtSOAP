@@ -49,17 +49,15 @@
 
 #include <memory>
 
-#if defined(Q_OS_WIN) || defined(Q_OS_SYMBIAN)
-#if defined(QtSOAP_EXPORTS)
-#define QT_QTSOAP_EXPORT Q_DECL_EXPORT
+// clang-format off
+#if defined(QTSOAP_STATIC)
+    #define QT_QTSOAP_EXPORT
+#elif defined(QTSOAP_LIBRARY)
+    #define QT_QTSOAP_EXPORT Q_DECL_EXPORT
 #else
-#define QT_QTSOAP_EXPORT Q_DECL_IMPORT
+    #define QT_QTSOAP_EXPORT Q_DECL_IMPORT
 #endif
-#endif
-
-#if !defined(QT_QTSOAP_EXPORT)
-#define QT_QTSOAP_EXPORT Q_DECL_EXPORT
-#endif
+// clang-format on
 
 #define SOAPv11_ENVELOPE "http://schemas.xmlsoap.org/soap/envelope/"
 #define SOAPv11_ENCODING "http://schemas.xmlsoap.org/soap/encoding/"
