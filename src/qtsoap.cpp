@@ -3156,8 +3156,8 @@ void QtSoapHttpTransport::readResponse(QNetworkReply *reply)
     } break;
     }
 
-    emit responseReady();
-    emit responseReady(soapResponse);
+    Q_EMIT responseReady();
+    Q_EMIT responseReady(soapResponse);
 
     reply->deleteLater();
 }
